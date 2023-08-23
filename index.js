@@ -11,6 +11,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const verrifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'Unauthorized User' })
+    }
+
+    const token = authorization.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRECT, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ error: true, message: 'Unauthorized User' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 // ======= MongoDB =========//
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hla3ttg.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -85,11 +102,17 @@ async function run() {
 
         // cart collection APIs
 
-        app.get('/cart', async (req, res) => {
+        app.get('/cart', verrifyJWT, async (req, res) => {
             const email = req.query.email;
             if (!email) {
                 res.send([]);
             }
+
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+
             else {
                 const query = { email: email };
                 const result = await cartCollection.find(query).toArray();
