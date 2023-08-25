@@ -123,6 +123,12 @@ async function run() {
             res.send(result);
         })
 
+        app.post('/menu', verrifyJWT, verfifyAdmin, async (req, res) => {
+            const newItem = req.body;
+            const result = await menuCollection.insertOne(newItem);
+            res.send(result);
+        })
+
         // reviews API
         app.get('/reviews', async (req, res) => {
             const result = await reviewsCollection.find().toArray();
